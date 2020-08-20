@@ -12,6 +12,7 @@
           state: present
       - name: Stop Apache prior to installing NGINX
         service: name=apache2 state=stopped enabled=no
+        ignore_errors: yes 
       - name: install NGINX and PHP
         apt:
           name:
@@ -30,7 +31,7 @@
         notify: index_html  
 
     handlers:
-      - name: index_php
+      - name: index_html
         service: name=ngingx state=restarted enabled=yes
 
 
@@ -58,6 +59,7 @@
            - python-mysqldb
            - python-pip
          state: present
+         allow-unauthenticated: yes
          update_cache: yes
      - name: Install MySQL dependencies [2/2]
        pip: name=pymysql state=present
