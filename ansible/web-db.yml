@@ -1,0 +1,84 @@
+---
+
+  - hosts: web
+    become: true
+
+    tasks:
+      - name: add PHP repo [1/2]
+        apt: name=software-properties-common state=present
+      - name: add PHP repo [2/2]
+        apt_repository:
+          repo: ppa:ondrej/php 
+          state: present
+      - name: Stop Apache prior to installing NGINX
+        service: name=apache2 state=stopped enabled=no
+      - name: install NGINX and PHP
+        apt:
+          name:
+            - nginx
+            - php7.4
+            - php7.4-fpm
+          state: present
+          update_cache: yes
+      - name: Enable NGINX
+        service: name=nginx state=started enabled=yes
+      - name: Upload test webpage
+        copy:
+          src: ./index.html
+          dest: /var/www/html
+          mode: 0755
+        notify: index_html  
+
+    handlers:
+      - name: index_php
+        service: name=ngingx state=restarted enabled=yes
+
+
+        
+  - hosts: db
+    become: true
+
+    vars_files:
+      - sql_pass.yml
+
+    tasks:
+     - name: download MySQL-8
+       get_url:
+         url: https://dev.mysql.com/get/mysql-apt-config_0.8.10-1_all.deb
+         dest: /home/ubuntu
+     - name: install MySQL-8
+       apt:
+         deb: /home/ubuntu/mysql-apt-config_0.8.10-1_all.deb
+         state: present
+     - name: Install MySQL dependencies [1/2]
+       apt:
+         name:
+           - mysql-server
+           - mysql-client
+           - python-mysqldb
+           - python-pip
+         state: present
+         update_cache: yes
+     - name: Install MySQL dependencies [2/2]
+       pip: name=pymysql state=present
+     - name: Copy my.cnf
+       copy:
+         src: ./my.cnf
+         dest: /etc/my.cnf
+         mode: 0644
+     - name: Change the authentication plugin of MySQL root user to mysql_native_password
+       shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
+     - name: Flush Privileges
+       shell: mysql -u root -e 'FLUSH PRIVILEGES'
+     - name: Restart MySQL
+       service: name=mysql state=restarted enabled=yes        
+     - name: Set MySQL root password
+       mysql_user:
+        host: 'localhost'
+        login_user: 'root'
+        login_password: ''
+        name: 'root'
+        password: '{{ sql_pass }}'
+        state: present
+
+...   
