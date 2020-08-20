@@ -28,12 +28,6 @@
           src: ./index.html
           dest: /var/www/html
           mode: 0755
-        notify: index_html  
-
-    handlers:
-      - name: index_html
-        service: name=ngingx state=restarted enabled=yes
-
 
         
   - hosts: db
@@ -53,14 +47,14 @@
          state: present
      - name: Install MySQL dependencies [1/2]
        apt:
+         update_cache: yes
          name:
+           - python-pip
            - mysql-server
            - mysql-client
            - python-mysqldb
-           - python-pip
          state: present
          allow-unauthenticated: yes
-         update_cache: yes
      - name: Install MySQL dependencies [2/2]
        pip: name=pymysql state=present
      - name: Copy my.cnf
