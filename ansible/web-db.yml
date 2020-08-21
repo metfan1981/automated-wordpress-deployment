@@ -47,14 +47,15 @@
          state: present
      - name: Install MySQL dependencies [1/2]
        apt:
-         update_cache: yes
          name:
+           - python-apt            
            - python-pip
            - mysql-server
            - mysql-client
            - python-mysqldb
          state: present
          allow-unauthenticated: yes
+         update_cache: yes
      - name: Install MySQL dependencies [2/2]
        pip: name=pymysql state=present
      - name: Copy my.cnf

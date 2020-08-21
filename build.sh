@@ -6,6 +6,11 @@ TF_DIR=$WORKDIR/terraform/template
 cd $TF_DIR
 terraform init
 terraform apply -auto-approve
+# error handling
+if [ $? -ne 0 ]; then
+  echo "error during TF initialization has occurred!"  
+  exit
+fi
 
 # Parsing terraform.tfstate to gather hosts' IP addresses and create ansible inventory
 cd $WORKDIR
