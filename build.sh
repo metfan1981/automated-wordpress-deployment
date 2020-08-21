@@ -3,11 +3,12 @@
 WORKDIR=$(pwd)
 TF_DIR=$WORKDIR/terraform/template
 
-function ansible-playbook() {
-  ansible-playbook $1 -i $TF_DIR/tf-inventory.ini --ask-vault-pass
+function play_ansible() {
+  cd $WORKDIR/ansible
+  ansible-playbook $1 -i $TF_DIR/tf-inventory.ini --vault-password-file=vault_pass
   # may not work after initial playbook run
   if [ $? -ne 0 ]; then
-    ansible-playbook $1 -i $TF_DIR/tf-inventory.ini --ask-vault-pass
+    ansible-playbook $1 -i $TF_DIR/tf-inventory.ini --vault-password-file=vault_pass
   fi
 }
 
@@ -23,17 +24,18 @@ fi
 # Parsing terraform.tfstate to gather hosts' IP addresses and create ansible inventory
 cd $WORKDIR
 python parser-tfstate.py -p $TF_DIR
-cd ansible
-ansible-playbook web-db.yml
 
-echo
-echo
-echo "Instances have been provisioned and configured successfully!"
-echo
+# Configure Webserver and DB
+play_ansible "web-setup.yml"
+play_ansible "db-setup.yml"
+if [ $? -eq 0 ]; then
+  echo "Instances have been provisioned and configured successfully!"
+fi
+
 echo "Installing WordPress on Webservers..."
-ansible-playbook wp.yml
-echo
-echo
-echo "Wordpress has been installed successfully!"
+play_ansible "wordpress-setup.yml"
+if [ $? -eq 0 ]; then
+  echo "Wordpress has been installed successfully!"
+fi
 
-
+echo "done"

@@ -4,6 +4,10 @@
     become: true
 
     tasks:
+      - name: Add WP user "test"
+        user:
+          name: test
+          state: present
       - name: PHP libraries for WordPress
         apt:
           name:
@@ -16,14 +20,8 @@
             - php-mbstring
           state: present
           update_cache: yes
-      - name: Enable NGINX and PHP-fpm services
-        service: 
-          name:
-            - nginx
-            - php7.4-fpm  
-              i
-          state: started 
-          enabled: yes
+      - name: Enable PHP-fpm
+        service: name=php7.4-fpm state=started enabled=yes
       - name: Create dirs for cache and fpm sockets [1/2]
         file:
           path: /usr/share/nginx/cache/fcgi
@@ -41,17 +39,10 @@
           - { src: 'wordpress/test.conf', dest: '/etc/nginx/conf.d/test.conf' }
           - { src: 'wordpress/php.ini', dest: '/etc/php/7.4/fpm/php.ini' }
           - { src: 'wordpress/fpm/test.conf', dest: '/etc/php/7.4/fpm/pool.d/test.conf' }
-      - name: Restart services
-        service: 
-          name:
-            - nginx
-            - php7.4-fpm
-          state: restarted
-      - name: add WP user
-        user:
-          name: test
-          state: present
-          password: test
+      - name: Restart services [1/2]
+        service: name=nginx state=restarted
+      - name: Restart services [2/2]
+        service: name=php7.4-fpm state=restarted
       - name: Create dir for user
         file:
           path: /home/test/logs
@@ -71,11 +62,9 @@
         script: wordpress/wp-install.sh
       - name: Copy WP configuration files [2/2]
         copy: src=wordpress/wp-config.php dest=/home/test/public_html/wp-config.php
-      - name: Restart services
-        service: 
-          name:
-            - nginx
-            - php7.4-fpm
-          state: restarted
+      - name: Restart services [1/2]
+        service: name=nginx state=restarted
+      - name: Restart services [2/2]
+        service: name=php7.4-fpm state=restarted
 
 ...
