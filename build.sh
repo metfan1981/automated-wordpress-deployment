@@ -26,16 +26,29 @@ cd $WORKDIR
 python parser-tfstate.py -p $TF_DIR
 
 # Configure Webserver and DB
+echo
+echo
+echo "Configuring Webservers..."
 play_ansible "web-setup.yml"
+
+echo
+echo
+echo "Configuring Database..."
 play_ansible "db-setup.yml"
 if [ $? -eq 0 ]; then
   echo "Instances have been provisioned and configured successfully!"
 fi
 
+echo
+echo
 echo "Installing WordPress on Webservers..."
 play_ansible "wordpress-setup.yml"
 if [ $? -eq 0 ]; then
   echo "Wordpress has been installed successfully!"
 fi
 
-echo "done"
+echo
+echo
+echo "Done!"
+echo "Do not forget to edit 'wp-config.php' at webserver hosts"
+echo "(step 6 at README.md)"
