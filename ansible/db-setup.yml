@@ -1,35 +1,5 @@
 ---
 
-  - hosts: web
-    become: true
-
-    tasks:
-      - name: add PHP repo [1/2]
-        apt: name=software-properties-common state=present
-      - name: add PHP repo [2/2]
-        apt_repository:
-          repo: ppa:ondrej/php 
-          state: present
-      - name: Stop Apache prior to installing NGINX
-        service: name=apache2 state=stopped enabled=no
-        ignore_errors: yes 
-      - name: install NGINX and PHP
-        apt:
-          name:
-            - nginx
-            - php7.4
-            - php7.4-fpm
-          state: present
-          update_cache: yes
-      - name: Enable NGINX
-        service: name=nginx state=started enabled=yes
-      - name: Upload test webpage
-        copy:
-          src: ./index.html
-          dest: /var/www/html
-          mode: 0755
-
-        
   - hosts: db
     become: true
 
@@ -47,14 +17,15 @@
          state: present
      - name: Install MySQL dependencies [1/2]
        apt:
-         update_cache: yes
          name:
+           - python-apt            
            - python-pip
            - mysql-server
            - mysql-client
            - python-mysqldb
          state: present
          allow-unauthenticated: yes
+         update_cache: yes
      - name: Install MySQL dependencies [2/2]
        pip: name=pymysql state=present
      - name: Copy my.cnf
@@ -66,6 +37,12 @@
        shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
      - name: Flush Privileges
        shell: mysql -u root -e 'FLUSH PRIVILEGES'
+     - name: Create MySQL user for Wordpress [1/2]
+       shell: mysql -u root -e "CREATE USER 'test'@'%' IDENTIFIED BY 'test';"
+     - name: Create MySQL user for Wordpress [2/2]
+       shell: mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO 'test'@'%' WITH GRANT OPTION;"
+     - name: Create DB for Wordpress 
+       shell: mysql -u root -e "CREATE DATABASE wordpress;"
      - name: Restart MySQL
        service: name=mysql state=restarted enabled=yes        
      - name: Set MySQL root password
@@ -77,4 +54,4 @@
         password: '{{ sql_pass }}'
         state: present
 
-...   
+...  

@@ -1,0 +1,70 @@
+---
+
+  - hosts: web
+    become: true
+
+    tasks:
+      - name: Add WP user "test"
+        user:
+          name: test
+          state: present
+      - name: PHP libraries for WordPress
+        apt:
+          name:
+            - php7.4-mysql
+            - php-json 
+            - php-xmlrpc
+            - php-curl
+            - php-gd
+            - php-xml
+            - php-mbstring
+          state: present
+          update_cache: yes
+      - name: Enable PHP-fpm
+        service: name=php7.4-fpm state=started enabled=yes
+      - name: Create dirs for cache and fpm sockets [1/2]
+        file:
+          path: /usr/share/nginx/cache/fcgi
+          state: directory
+      - name: Create dirs for cache and fpm sockets [2/2]
+        file:
+          path: /run/php-fpm
+          state: directory
+      - name: Copy WP configuration files [1/2]
+        copy: src={{ item.src }} dest={{ item.dest }}
+        with_items:
+          - { src: 'wordpress/nginx.conf', dest: '/etc/nginx/nginx.conf' }
+          - { src: 'wordpress/php-fpm.conf', dest: '/etc/php/7.4/fpm/php-fpm.conf' }
+          - { src: 'wordpress/www.conf', dest: '/etc/php/7.4/fpm/pool.d/www.conf' }
+          - { src: 'wordpress/test.conf', dest: '/etc/nginx/conf.d/test.conf' }
+          - { src: 'wordpress/php.ini', dest: '/etc/php/7.4/fpm/php.ini' }
+          - { src: 'wordpress/fpm/test.conf', dest: '/etc/php/7.4/fpm/pool.d/test.conf' }
+      - name: Restart services [1/2]
+        service: name=nginx state=restarted
+      - name: Restart services [2/2]
+        service: name=php7.4-fpm state=restarted
+      - name: Create dir for user
+        file:
+          path: /home/test/logs
+          state: directory
+      - name: Ansible delete default nginx vhost and php-fmp configs
+        file:
+          path: "{{ item }}"
+          state: absent
+        with_items:
+          - /etc/nginx/sites-enabled/default
+          - /etc/php/7.4/fpm/pool.d/www.conf
+      - name: Create the php-fpm logfile
+        file:
+          path: /home/test/logs/phpfpm_error.log
+          state: touch
+      - name: Installling WordPress using script
+        script: wordpress/wp-install.sh
+      - name: Copy WP configuration files [2/2]
+        copy: src=wordpress/wp-config.php dest=/home/test/public_html/wp-config.php
+      - name: Restart services [1/2]
+        service: name=nginx state=restarted
+      - name: Restart services [2/2]
+        service: name=php7.4-fpm state=restarted
+
+...
