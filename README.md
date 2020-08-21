@@ -30,6 +30,20 @@ Automated provisioning of EC2 instances (webserver and DB) and configuration usi
 
 `./build.sh`
 
+6) Edit wp-config:
+
+`ssh ubuntu@<webserver IP> -i <your private SSH key>`
+edit */home/test/public_html/wp-config.php* at line:
+> *define( 'DB_HOST', '10.10.10.214' );*
+paste Private IP of DB server
+
+
+7) Restart web services:
+`sudo systemctl restart nginx &&s udo systemctl restart php7.4-fpm`
+
+
+8) Login to Wordpress Webpage and begin configuration!
+
 
 ### Cleanup
 `cd terraform/template && terraform destroy -auto-approve`
